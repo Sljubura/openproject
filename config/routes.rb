@@ -79,6 +79,7 @@ OpenProject::Application.routes.draw do
         resources :statuses, :only => [:index, :show]
       end
 
+      resources :custom_fields
 
       namespace :pagination, :as => 'paginate' do
         [:users,
@@ -91,6 +92,7 @@ OpenProject::Application.routes.draw do
           resources model, :only => [:index]
         end
       end
+
     end
   end
 
