@@ -66,6 +66,34 @@ describe 'api/v2/planning_elements/show.api.rsb' do
 
       render
     end
+
+    describe 'with custom fields' do
+      let(:custom_field) do
+        FactoryGirl.create :issue_custom_field,
+          :name => "Belag",
+          :field_format => "text",
+          :projects => [planning_element.project],
+          :types => [(Type.find_by_name("None") || FactoryGirl.create(:type_standard))]
+      end
+
+      before do
+        custom_value = CustomValue.new(
+          :custom_field => custom_field,
+          :value => "Wurst")
+        planning_element.custom_field_values << custom_value
+
+        assign(:planning_element, planning_element)
+        render
+      end
+
+      subject { Nokogiri.XML(response.body) }
+
+      it 'renders the custom field values' do
+        custom_value = subject.xpath("//custom_fields/custom_field/value/text()")
+
+        custom_value.to_s.should == "Wurst"
+      end
+    end
   end
 
   describe 'with an assigned planning element
