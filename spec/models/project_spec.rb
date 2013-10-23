@@ -149,4 +149,97 @@ describe Project do
       expect { Project.find_visible(user, project.id) }.to raise_error ActiveRecord::RecordNotFound
     end
   end
+
+  describe :copy do
+    let(:project) { FactoryGirl.create(:project_with_types) }
+    let(:copy) { Project.new }
+
+    before do
+      copy.name = "foo"
+      copy.identifier = "foo"
+      copy.copy(project)
+    end
+
+    subject { copy }
+
+    it "should be able to be copied" do
+
+      copy.should be_valid
+      copy.should_not be_new_record
+    end
+  end
+
+  describe :copy_attributes do
+    let(:project) do
+      project = FactoryGirl.create(:project_with_types)
+      work_package_custom_field = FactoryGirl.create(:work_package_custom_field)
+      project.work_package_custom_fields << work_package_custom_field
+      project.save
+      project
+    end
+    let(:copy) do
+      copy = Project.new
+      copy.name = "foo"
+      copy.identifier = "foo"
+      copy
+    end
+
+    before do
+      copy.send :copy_attributes, project
+      copy.save
+    end
+
+    it "should copy all relevant attributes from another project" do
+      copy.types.should == project.types
+      copy.work_package_custom_fields.should == project.work_package_custom_fields
+    end
+  end
+
+  describe :copy_associations do
+    let(:project) { FactoryGirl.create(:project_with_types) }
+    let(:copy) do
+      copy = Project.new
+      copy.name = "foo"
+      copy.identifier = "foo"
+      copy.copy_attributes(project)
+      copy.save
+      copy
+    end
+
+    describe :copy_work_packages do
+      before do
+        wp1 = FactoryGirl.create(:work_package, :project => project)
+        wp2 = FactoryGirl.create(:work_package, :project => project)
+        wp3 = FactoryGirl.create(:work_package, :project => project)
+        relation = FactoryGirl.create(:relation, :from => wp1, :to => wp2)
+        wp1.parent = wp3
+        wp1.category = FactoryGirl.create(:category, :project => project)
+        wp1.fixed_version = FactoryGirl.create(:version, :project => project)
+        [wp1, wp2, wp3].each { |wp| project.work_packages << wp }
+
+        copy.send :copy_work_packages, project
+        copy.save
+      end
+
+      subject { copy.work_packages.count }
+
+      it { should == project.work_packages.count }
+    end
+
+    describe :copy_timelines do
+      before do
+        timeline = FactoryGirl.create(:timeline, :project => project)
+        # set options to nil, is known to have been buggy
+        timeline.send :write_attribute, :options, nil
+
+        copy.send(:copy_timelines, project)
+        copy.save
+      end
+
+      subject { copy.timelines.count }
+
+      it { should == project.timelines.count }
+    end
+
+  end
 end

@@ -26,6 +26,10 @@
 # See doc/COPYRIGHT.rdoc for more details.
 #++
 
+
+# Provides some convenience for copying an ActiveRecord model with associations.
+# The actual copying methods need to be provided, though.
+# Including this Module will include Redmine::SafeAttributes as well.
 module CopyModel
   module InstanceMethods
 
@@ -35,7 +39,7 @@ module CopyModel
     def copy_attributes(from_model)
       with_model(from_model) do |model|
         # clear unique attributes
-        self.safe_attributes = model.attributes.dup.except(*self.class.not_to_copy)
+        self.safe_attributes = model.attributes.dup.except(*(Array(self.class.not_to_copy).map(&:to_s)))
         return self
       end
     end
@@ -56,9 +60,12 @@ module CopyModel
     def copy_associations(from_model, options={})
       to_be_copied = self.class.reflect_on_all_associations.map(&:name)
       to_be_copied = options[:only].to_a unless options[:only].nil?
+
       to_be_copied = to_be_copied.map(&:to_s).sort do |a,b|
-        (self.copy_precedence.index(a) || -1) <=> (self.copy_precedence.index(b) || -1)
+        (self.copy_precedence.map(&:to_s).index(a) || -1) <=> (self.copy_precedence.map(&:to_s).index(b) || -1)
       end.map(&:to_sym)
+
+
 
       with_model(from_model) do |model|
         self.class.transaction do
@@ -105,20 +112,20 @@ module CopyModel
 
     # Overwrite or set CLASS::NOT_TO_COPY to specify
     # which attributes are not safe to copy.
-    def not_to_copy
-      begin
-        self::NOT_TO_COPY
-      rescue NameError
-        []
-      end
+    def not_to_copy(should_not_be_copied = nil)
+      @not_to_copy ||= (should_not_be_copied || begin self::NOT_TO_COPY
+            rescue NameError
+              []
+            end)
+      @not_to_copy
     end
 
-    def copy_precedence
-      begin
-        self::COPY_PRECEDENCE
-      rescue NameError
-        []
-      end
+    def copy_precedence(precedence = nil)
+      @copy_precedence ||= (precedence || begin self::COPY_PRECEDENCE
+            rescue NameError
+              []
+            end)
+      @copy_precedence
     end
 
     # Copies +from_model+ and returns the new instance. This will not save
@@ -131,17 +138,20 @@ module CopyModel
     # copies everything (associations and attributes) based on
     # +from_model+.
     def copy(from_model, options = {})
-      self.new.copy(from_model)
+      self.new.copy(from_model, options)
     end
   end
 
   def self.included(base)
-    base.send :include, self::InstanceMethods
     base.send :extend,  self::ClassMethods
+    base.send :include, self::InstanceMethods
+    base.send :include, Redmine::SafeAttributes
+
   end
 
   def self.extended(base)
-    base.send :include, self::InstanceMethods
     base.send :extend,  self::ClassMethods
+    base.send :include, self::InstanceMethods
+    base.send :include, Redmine::SafeAttributes
   end
 end

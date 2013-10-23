@@ -43,10 +43,10 @@ class Project < ActiveRecord::Base
   RESERVED_IDENTIFIERS = %w( new level_list )
 
   # things that are explicitly excluded when copying a project
-  NOT_TO_COPY = ['id', 'name', 'identifier', 'status', 'lft', 'rgt']
+  not_to_copy ['id', 'name', 'identifier', 'status', 'lft', 'rgt']
 
   # specify the order of associations to copy
-  COPY_PRECEDENCE = ['members', 'versions', 'categories', 'work_packages', 'wiki']
+  copy_precedence ['members', 'versions', 'categories', 'work_packages', 'wiki']
 
   # Specific overidden Activities
   has_many :time_entry_activities
@@ -935,12 +935,12 @@ class Project < ActiveRecord::Base
       end
       # Parent issue
       if issue.parent_id
-        if copied_parent = work_packages_map[issue.parent_id]
+        if copied_parent = work_packages_map[issue.parent_id].reload
           new_issue.parent_id = copied_parent.id
         end
       end
-
       self.work_packages << new_issue
+
       if new_issue.new_record?
         logger.info "Project#copy_work_packages: work unit ##{issue.id} could not be copied: #{new_issue.errors.full_messages}" if logger && logger.info
       else
@@ -959,21 +959,23 @@ class Project < ActiveRecord::Base
       # Relations
       issue.relations_from.each do |source_relation|
         new_relation = Relation.new
-        new_relation.force_attributes = source_relation.attributes.dup.except("id", "work_package_from_id", "work_package_to_id")
+        new_relation.force_attributes = source_relation.attributes.dup.except("id", "from_id", "to_id")
         new_relation.to = work_packages_map[source_relation.to_id]
         if new_relation.to.nil? && Setting.cross_project_work_package_relations?
           new_relation.to = source_relation.to
         end
+        new_relation.to.reload
         new_issue.relations_from << new_relation
       end
 
       issue.relations_to.each do |source_relation|
         new_relation = Relation.new
-        new_relation.force_attributes = source_relation.attributes.dup.except("id", "work_package_from_id", "work_package_to_id")
+        new_relation.force_attributes = source_relation.attributes.dup.except("id", "from_id", "to_id")
         new_relation.from = work_packages_map[source_relation.from_id]
         if new_relation.from.nil? && Setting.cross_project_work_package_relations?
           new_relation.from = source_relation.from
         end
+        new_relation.from.reload
         new_issue.relations_to << new_relation
       end
     end
@@ -1036,7 +1038,8 @@ class Project < ActiveRecord::Base
   def copy_timelines(project)
     project.timelines.each do |timeline|
       copied_timeline = Timeline.new
-      copied_timeline.force_attributes = timeline.attributes.dup.except("id", "project_id")
+      copied_timeline.force_attributes = timeline.attributes.dup.except("id", "project_id", "options")
+      copied_timeline.options = timeline.options if timeline.options.present?
       copied_timeline.project = self
       copied_timeline.save
     end
