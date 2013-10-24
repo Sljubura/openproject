@@ -92,6 +92,6 @@ api.project do
   api.created_on(project.created_on.utc.iso8601) if project.created_on
   api.updated_on(project.updated_on.utc.iso8601) if project.updated_on
 
-  render :partial => '/api/v2/custom_fields/custom_field_values.api',
-      :locals => {:custom_field_values => project.custom_field_values}
+  # @TODO for #show once on rabl: partial "api/v2/custom_fields/values"
+  puts "[warning] Please merge feature/migrate_api_views_to_rabl otherwise no custom fields will be rendered for projects."
 end
