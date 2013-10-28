@@ -29,6 +29,8 @@ See doc/COPYRIGHT.rdoc for more details.
 
 # Changelog
 
+* `#2574`Invalid filter options and outdated names in timeline report form 
+
 ## 3.0.0pre23
 
 * `#709`  Added test for double custom field validation error messages
