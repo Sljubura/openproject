@@ -29,6 +29,8 @@ See doc/COPYRIGHT.rdoc for more details.
 
 # Changelog
 
+* `#2281` The context menu is not correctly displayed
+
 ## 3.0.0pre23
 
 * `#709`  Added test for double custom field validation error messages
