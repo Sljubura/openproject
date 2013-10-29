@@ -49,7 +49,7 @@ module Redmine::MenuManager::MenuHelper
       Redmine::MenuManager.loose :project_menu do |menu|
         menu.push "#{main_item.item_class}".to_sym,
           { :controller => '/wiki', :action => 'show', :id => h(main_item.title) },
-            :param => :project_id, :caption => main_item.name
+            :param => :project_id, :caption => main_item.name, :html => {:'data-icon2' => 'Y'}
 
         menu.push :"#{main_item.item_class}_new_page", {:action=>"new_child", :controller=>"/wiki", :id => h(main_item.title) },
           :param => :project_id, :caption => :create_child_page,
