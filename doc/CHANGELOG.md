@@ -29,6 +29,8 @@ See doc/COPYRIGHT.rdoc for more details.
 
 # Changelog
 
+# `1749` [SoC] 62: Prevent JSON Hijacking
+
 ## 3.0.0pre23
 
 * `#709`  Added test for double custom field validation error messages
