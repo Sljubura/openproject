@@ -29,6 +29,8 @@ See doc/COPYRIGHT.rdoc for more details.
 
 # Changelog
 
+* `#2564` Support custom fields in REST API v2 for work packages and projects
+
 ## 3.0.0pre23
 
 * `#709`  Added test for double custom field validation error messages
